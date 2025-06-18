@@ -1,0 +1,22 @@
+version: "3.4"
+
+services:
+    api_w_vpn:
+        restart: always
+        build: .
+        container_name: ${SERVICE_NAME}
+        command: gunicorn main:vpn --workers ${NUM_WORKERS} --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:${SERVICE_PORT} --forwarded-allow-ips='*'"
+        env_file:
+            - .env.runtime
+        volumes:
+            - ./app:/app
+            - /containers/${SERVICE_NAME}/logs:/app/logs
+        ports:
+            - "127.0.0.1:${SERVICE_PORT}:${SERVICE_PORT}"
+        networks:
+            - default
+
+networks:
+    default:
+        external:
+            name: w_vpn
