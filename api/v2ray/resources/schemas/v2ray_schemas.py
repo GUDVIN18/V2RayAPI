@@ -3,7 +3,8 @@ from typing import Optional, Any
 
 
 class V2RayUserFromDB(BaseModel):
-    uuid: str = Field(..., description="UUID пользователя")
+    server_id: int = Field(..., description="server_id")
+    uuid: str = Field(None, description="UUID пользователя")
     tg_id: int = Field(..., description="ID пользователя в Telegram")
     enable: bool = Field(..., description="Активировать пользователя")
     limit_ip: int = Field(..., description="Количество IP адресов, которые может использовать пользователь")

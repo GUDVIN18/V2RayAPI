@@ -1,5 +1,5 @@
 from typing import List
-from fastapi import APIRouter, Depends, Path, status
+from fastapi import APIRouter, Depends, Path, status, Body
 from fastapi_restful.cbv import cbv
 from loguru import logger as log
 from api.v2ray.resources import service
@@ -17,51 +17,34 @@ class V2RayRouter:
 
     @client_router.post(
         "/create",
-        response_model=V2RayUserFromDB,
+        response_model=SuccessResponse,
         status_code=200,
         name="Создать пользователя VPN",
         description="Создает пользователя VPN",
     )
-    async def create_v2ray_user(
-        self,
-        server_id: int = Path(..., description="ID сервера, на котором будет создан пользователь"),
-        uuid: UUID = Path(..., description="UUID пользователя"),
-        tg_id: int = Path(..., description="ID пользователя в Telegram"),
-        enable: bool = Path(..., description="Активировать пользователя"),
-        limit_ip: int = Path(..., description="Количество IP адресов, которые может использовать пользователь"),
-        expiry_time: int = Path(..., description="Время действия пользователя в мс (до какого числа будет активен)"),
-    ):
+    async def create_v2ray_user(self, data: V2RayUserFromDB):
         status = await service.V2RayProccessor.create_v2ray_user(
-            server_id=server_id,
-            uuid=uuid, 
-            tg_id=tg_id, 
-            enable=enable,
-            limit_ip=limit_ip,
-            expiry_time=expiry_time
+            **data.model_dump()
         )
         return status
+    
+
+
 
     @client_router.post(
         "/update",
-        response_model=V2RayUserFromDB,
+        response_model=SuccessResponse,
         status_code=200,
         name="Обновить пользователя VPN",
         description="Обновляет пользователя VPN",
     )
-    async def update_v2ray_user(
-        self,
-        server_id: int = Path(..., description="ID сервера, на котором будет создан пользователь"),
-        tg_id: int = Path(..., description="ID пользователя в Telegram"),
-        enable: bool = Path(..., description="Активировать пользователя"),
-        limit_ip: int = Path(..., description="Количество IP адресов, которые может использовать пользователь"),
-        expiry_time: int = Path(..., description="Время действия пользователя в мс (до какого числа будет активен)"),
-    ):
+    async def update_v2ray_user(self, data: V2RayUserFromDB):
         status = await service.V2RayProccessor.update_v2ray_user(
-            server_id=server_id,
-            tg_id=tg_id, 
-            enable=enable,
-            limit_ip=limit_ip,
-            expiry_time=expiry_time
+            server_id=data.server_id,
+            tg_id=data.tg_id, 
+            enable=data.enable,
+            limit_ip=data.limit_ip,
+            expiry_time=data.expiry_time
         )
         return status
 

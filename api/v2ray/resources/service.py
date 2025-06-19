@@ -5,18 +5,20 @@ from asgiref.sync import sync_to_async
 import qrcode
 from py3xui import Inbound
 
-#Временно сделаем через django ORM
+# Временное решение
+import sys
+# Абсолютный путь к корню проекта, где лежит bot_builder
+sys.path.insert(0, '/personal/bot_bulder_v1.1/bot_builder')
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'bot_builder.settings')
 import django
 django.setup()
-from .....bot_builder.apps.xrey_app import VPNServer
-# 
+from apps.xrey_app.models import VPNServer
+########################################################
 
 
 class V2RayProccessor:
 
     async def create_v2ray_user(
-        self,
         server_id: int,
         uuid: str,
         tg_id: int,
@@ -64,7 +66,6 @@ class V2RayProccessor:
         )
 
     async def update_v2ray_user(
-        self,
         server_id: int,
         tg_id: int,
         enable: bool,
@@ -96,9 +97,16 @@ class V2RayProccessor:
                 client.expiry_time = expiry_time
                 api.client.update(str(client.id), client)
 
+                key = await get_connection_string(
+                    inbound, user_uuid, str(tg_id),
+                    XUI_EXTERNAL_IP, SERVER_PORT, MAIN_REMARK
+                )
                 return SuccessResponse(
                     message="Success Update",
-                    data={**client.dict()}
+                    data={
+                        "key": key,
+                        **client.model_dump(),
+                    }
                 )
         if not clients:
             raise ValueError("clients not found")
