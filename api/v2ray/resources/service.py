@@ -8,11 +8,13 @@ from py3xui import Inbound
 # Временное решение
 import sys
 # Абсолютный путь к корню проекта, где лежит bot_builder
-sys.path.insert(0, '/personal/bot_bulder_v1.1/bot_builder')
+sys.path.insert(0, '/personal/wvpn-project/bot_builder')
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'bot_builder.settings')
 import django
+from urllib.parse import urlparse
 django.setup()
 from apps.xrey_app.models import VPNServer
+import secrets
 ########################################################
 
 
@@ -44,25 +46,28 @@ class V2RayProccessor:
             id=uuid,
             email=str(tg_id),
             enable=enable,
-            flow="xtls-rprx-vision",
+            # flow="xtls-rprx-vision",
             tg_id=tg_id,
             limit_ip=limit_ip,
-            level=0,
+            sub_id = ''.join(secrets.choice('abcdefghijklmnopqrstuvwxyz0123456789') for _ in range(16)),
+            # level=0,
             expiry_time=expiry_time
         )
-        key = await get_connection_string(
-            inbound, uuid, str(tg_id),
-            XUI_EXTERNAL_IP, SERVER_PORT, MAIN_REMARK
-        )
+        # key = await get_connection_string(
+        #     inbound, uuid, str(tg_id),
+        #     XUI_EXTERNAL_IP, SERVER_PORT, MAIN_REMARK
+        # )
+        key = None
         qrcode_path = await generate_qr_code_async(key, str(tg_id), output_dir="./vpn/qrcodes")
+        parsed = urlparse(server.xui_host)
+        sub_url = f"{parsed.scheme}://{parsed.hostname}:2096/sub/{new_client.sub_id}"
         try:
             api.client.add(inbound_id, [new_client])
-
         except Exception as e:
             raise e
         return SuccessResponse(
             message="Success Create",
-            data={"key": key, "qrcode_path": qrcode_path}
+            data={"key": key, "qrcode_path": qrcode_path, "sub_url": sub_url}
         )
 
     async def update_v2ray_user(
@@ -88,6 +93,7 @@ class V2RayProccessor:
 
         clients = inbound.settings.clients
         for client in clients:
+            client: Client
             if client.email == str(tg_id):
                 # if await user_condition(str(tg_id)) == "Платно":
                 client.inbound_id = inbound_id
@@ -97,14 +103,18 @@ class V2RayProccessor:
                 client.expiry_time = expiry_time
                 api.client.update(str(client.id), client)
 
-                key = await get_connection_string(
-                    inbound, user_uuid, str(tg_id),
-                    XUI_EXTERNAL_IP, SERVER_PORT, MAIN_REMARK
-                )
+                # key = await get_connection_string(
+                #     inbound, user_uuid, str(tg_id),
+                #     XUI_EXTERNAL_IP, SERVER_PORT, MAIN_REMARK
+                # )
+                key = None
+                parsed = urlparse(server.xui_host)
+                sub_url = f"{parsed.scheme}://{parsed.hostname}:2096/sub/{client.sub_id}"
                 return SuccessResponse(
                     message="Success Update",
                     data={
                         "key": key,
+                        "sub_url": sub_url,
                         **client.model_dump(),
                     }
                 )
